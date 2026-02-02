@@ -8,7 +8,7 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # 安裝依賴
-RUN npm ci
+RUN npm install
 
 # 複製源代碼
 COPY . .
@@ -28,7 +28,7 @@ COPY --from=builder /app/knexfile.ts ./
 COPY --from=builder /app/migrations ./migrations
 
 # 安裝生產依賴
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # 創建上傳目錄
 RUN mkdir -p uploads

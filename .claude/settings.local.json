@@ -5,7 +5,9 @@
       "Bash(powershell -Command \"Get-ChildItem -Recurse -Force | Select-Object -ExpandProperty FullName | Sort-Object\")",
       "Bash(findstr:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

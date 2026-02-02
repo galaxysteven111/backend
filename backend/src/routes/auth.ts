@@ -71,10 +71,11 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       res.status(500).json({ error: '服務器配置錯誤' });
       return;
     }
+    const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       jwtSecret,
-      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as string }
+      { expiresIn }
     );
 
     res.status(201).json({
@@ -122,10 +123,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       res.status(500).json({ error: '服務器配置錯誤' });
       return;
     }
+    const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       jwtSecret,
-      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as string }
+      { expiresIn }
     );
 
     res.json({
