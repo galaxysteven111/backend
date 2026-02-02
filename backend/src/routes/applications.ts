@@ -13,12 +13,13 @@ const applySchema = z.object({
 });
 
 // 申請飯盒
-router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const parsed = applySchema.safeParse(req.body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message || '輸入驗證失敗';
-      return res.status(400).json({ error: firstError });
+      res.status(400).json({ error: firstError });
+      return;
     }
 
     const { food_box_id, message, quantity_requested } = parsed.data;
@@ -26,15 +27,18 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     // 檢查飯盒是否存在且可用
     const foodBox = await db('food_boxes').where({ id: food_box_id }).select('id', 'status', 'donor_id', 'title').first();
     if (!foodBox) {
-      return res.status(404).json({ error: '飯盒不存在' });
+      res.status(404).json({ error: '飯盒不存在' });
+      return;
     }
 
     if (foodBox.status !== 'available') {
-      return res.status(400).json({ error: '該飯盒不可申請' });
+      res.status(400).json({ error: '該飯盒不可申請' });
+      return;
     }
 
     if (foodBox.donor_id === req.userId) {
-      return res.status(400).json({ error: '不能申請自己的飯盒' });
+      res.status(400).json({ error: '不能申請自己的飯盒' });
+      return;
     }
 
     // 檢查是否已申請
@@ -47,7 +51,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       .first();
 
     if (existingApplication) {
-      return res.status(400).json({ error: '您已經申請過這個飯盒' });
+      res.status(400).json({ error: '您已經申請過這個飯盒' });
+      return;
     }
 
     const [application] = await db('applications')
@@ -74,14 +79,16 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       message: '申請成功',
       application
     });
+    return;
   } catch (error: any) {
     console.error('申請飯盒錯誤:', error);
     res.status(500).json({ error: '申請失敗' });
+    return;
   }
 });
 
 // 獲取我的申請列表
-router.get('/my-applications', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/my-applications', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const applications = await db('applications')
       .select(
@@ -103,21 +110,24 @@ router.get('/my-applications', authenticate, async (req: AuthRequest, res: Respo
       .orderBy('applications.created_at', 'desc');
 
     res.json({ applications });
+    return;
   } catch (error: any) {
     console.error('獲取申請列表錯誤:', error);
     res.status(500).json({ error: '獲取申請列表失敗' });
+    return;
   }
 });
 
 // 獲取我的飯盒的申請列表（捐贈者視角）
-router.get('/my-food-boxes/:foodBoxId', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/my-food-boxes/:foodBoxId', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { foodBoxId } = req.params;
 
     // 檢查飯盒是否屬於當前用戶
     const foodBox = await db('food_boxes').where({ id: foodBoxId, donor_id: req.userId }).select('id').first();
     if (!foodBox) {
-      return res.status(404).json({ error: '飯盒不存在或無權限' });
+      res.status(404).json({ error: '飯盒不存在或無權限' });
+      return;
     }
 
     const applications = await db('applications')
@@ -132,20 +142,23 @@ router.get('/my-food-boxes/:foodBoxId', authenticate, async (req: AuthRequest, r
       .orderBy('applications.created_at', 'desc');
 
     res.json({ applications });
+    return;
   } catch (error: any) {
     console.error('獲取申請列表錯誤:', error);
     res.status(500).json({ error: '獲取申請列表失敗' });
+    return;
   }
 });
 
 // 批准/拒絕申請
-router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.patch('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
     if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ error: '無效的狀態' });
+      res.status(400).json({ error: '無效的狀態' });
+      return;
     }
 
     // 獲取申請信息
@@ -156,11 +169,13 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       .first();
 
     if (!application) {
-      return res.status(404).json({ error: '申請不存在' });
+      res.status(404).json({ error: '申請不存在' });
+      return;
     }
 
     if (application.donor_id !== req.userId) {
-      return res.status(403).json({ error: '無權限操作此申請' });
+      res.status(403).json({ error: '無權限操作此申請' });
+      return;
     }
 
     // 更新申請狀態
@@ -195,9 +210,11 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       message: `申請已${status === 'approved' ? '批准' : '拒絕'}`,
       application: updated
     });
+    return;
   } catch (error: any) {
     console.error('更新申請狀態錯誤:', error);
     res.status(500).json({ error: '更新申請狀態失敗' });
+    return;
   }
 });
 

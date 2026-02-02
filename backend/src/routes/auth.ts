@@ -30,12 +30,13 @@ const loginSchema = z.object({
 });
 
 // 註冊
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message || '輸入驗證失敗';
-      return res.status(400).json({ error: firstError });
+      res.status(400).json({ error: firstError });
+      return;
     }
 
     const { email, password, name, phone, role, district, latitude, longitude } = parsed.data;
@@ -43,7 +44,8 @@ router.post('/register', async (req: Request, res: Response) => {
     // 檢查用戶是否已存在
     const existingUser = await db('users').where({ email: email.toLowerCase() }).first();
     if (existingUser) {
-      return res.status(400).json({ error: '該電子郵件已被註冊' });
+      res.status(400).json({ error: '該電子郵件已被註冊' });
+      return;
     }
 
     // 加密密碼
@@ -64,10 +66,15 @@ router.post('/register', async (req: Request, res: Response) => {
       .returning(['id', 'email', 'name', 'role', 'district']);
 
     // 生成JWT
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      res.status(500).json({ error: '服務器配置錯誤' });
+      return;
+    }
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      jwtSecret,
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as string }
     );
 
     res.status(201).json({
@@ -75,19 +82,22 @@ router.post('/register', async (req: Request, res: Response) => {
       user,
       token
     });
+    return;
   } catch (error: any) {
     console.error('註冊錯誤:', error);
     res.status(500).json({ error: '註冊失敗' });
+    return;
   }
 });
 
 // 登錄
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message || '輸入驗證失敗';
-      return res.status(400).json({ error: firstError });
+      res.status(400).json({ error: firstError });
+      return;
     }
 
     const { email, password } = parsed.data;
@@ -95,20 +105,27 @@ router.post('/login', async (req: Request, res: Response) => {
     // 查找用戶
     const user = await db('users').where({ email: email.toLowerCase() }).first();
     if (!user) {
-      return res.status(401).json({ error: '無效的電子郵件或密碼' });
+      res.status(401).json({ error: '無效的電子郵件或密碼' });
+      return;
     }
 
     // 驗證密碼
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
-      return res.status(401).json({ error: '無效的電子郵件或密碼' });
+      res.status(401).json({ error: '無效的電子郵件或密碼' });
+      return;
     }
 
     // 生成JWT
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      res.status(500).json({ error: '服務器配置錯誤' });
+      return;
+    }
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      jwtSecret,
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as string }
     );
 
     res.json({
@@ -122,14 +139,16 @@ router.post('/login', async (req: Request, res: Response) => {
       },
       token
     });
+    return;
   } catch (error: any) {
     console.error('登錄錯誤:', error);
     res.status(500).json({ error: '登錄失敗' });
+    return;
   }
 });
 
 // 獲取當前用戶信息
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/me', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await db('users')
       .where({ id: req.userId })
@@ -137,13 +156,16 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       .first();
 
     if (!user) {
-      return res.status(404).json({ error: '用戶不存在' });
+      res.status(404).json({ error: '用戶不存在' });
+      return;
     }
 
     res.json({ user });
+    return;
   } catch (error: any) {
     console.error('獲取用戶信息錯誤:', error);
     res.status(500).json({ error: '獲取用戶信息失敗' });
+    return;
   }
 });
 

@@ -85,7 +85,7 @@ import foodBoxRoutes from './routes/foodBoxes';
 import applicationRoutes from './routes/applications';
 import notificationRoutes from './routes/notifications';
 
-app.get('/api', (req, res) => {
+app.get('/api', (_req, res) => {
   res.json({
     message: '歡迎使用捐飯盒平台API',
     version: '1.0.0'
@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
 });
 
 // 404處理 - 必須在路由之後、錯誤處理之前
-app.use((req: express.Request, res: express.Response) => {
+app.use((_req: express.Request, res: express.Response) => {
   res.status(404).json({ error: '路由不存在' });
 });
 

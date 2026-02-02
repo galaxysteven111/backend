@@ -59,7 +59,7 @@ const createFoodBoxSchema = z.object({
 });
 
 // 獲取所有可用的飯盒（支持篩選）
-router.get('/', optionalAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
       district,
@@ -132,14 +132,16 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response) => {
     const foodBoxes = await query;
 
     res.json({ foodBoxes });
+    return;
   } catch (error: any) {
     console.error('獲取飯盒列表錯誤:', error);
     res.status(500).json({ error: '獲取飯盒列表失敗' });
+    return;
   }
 });
 
 // 獲取單個飯盒詳情
-router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
+router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -155,7 +157,8 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
       .first();
 
     if (!foodBox) {
-      return res.status(404).json({ error: '飯盒不存在' });
+      res.status(404).json({ error: '飯盒不存在' });
+      return;
     }
 
     // 如果用戶已登錄，檢查是否已申請
@@ -171,19 +174,22 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ foodBox });
+    return;
   } catch (error: any) {
     console.error('獲取飯盒詳情錯誤:', error);
     res.status(500).json({ error: '獲取飯盒詳情失敗' });
+    return;
   }
 });
 
 // 創建飯盒（需要認證）
-router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const parsed = createFoodBoxSchema.safeParse(req.body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message || '輸入驗證失敗';
-      return res.status(400).json({ error: firstError });
+      res.status(400).json({ error: firstError });
+      return;
     }
 
     const { title, description, quantity, latitude, longitude, district, pickup_address, pickup_time_start, pickup_time_end, contact_method, images } = parsed.data;
@@ -209,21 +215,24 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       message: '飯盒發布成功',
       foodBox
     });
+    return;
   } catch (error: any) {
     console.error('創建飯盒錯誤:', error);
     res.status(500).json({ error: '發布飯盒失敗' });
+    return;
   }
 });
 
 // 更新飯盒（僅限捐贈者本人）
-router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.patch('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
     // 檢查飯盒是否存在且屬於當前用戶
     const foodBox = await db('food_boxes').where({ id, donor_id: req.userId }).select('id').first();
     if (!foodBox) {
-      return res.status(404).json({ error: '飯盒不存在或無權限' });
+      res.status(404).json({ error: '飯盒不存在或無權限' });
+      return;
     }
 
     // 只允許更新特定欄位，防止 mass assignment
@@ -236,7 +245,8 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     }
 
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: '沒有提供要更新的欄位' });
+      res.status(400).json({ error: '沒有提供要更新的欄位' });
+      return;
     }
 
     const [updated] = await db('food_boxes')
@@ -248,43 +258,51 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       message: '飯盒更新成功',
       foodBox: updated
     });
+    return;
   } catch (error: any) {
     console.error('更新飯盒錯誤:', error);
     res.status(500).json({ error: '更新飯盒失敗' });
+    return;
   }
 });
 
 // 刪除飯盒（僅限捐贈者本人）
-router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
     const foodBox = await db('food_boxes').where({ id, donor_id: req.userId }).select('id').first();
     if (!foodBox) {
-      return res.status(404).json({ error: '飯盒不存在或無權限' });
+      res.status(404).json({ error: '飯盒不存在或無權限' });
+      return;
     }
 
     await db('food_boxes').where({ id }).update({ status: 'cancelled' });
 
     res.json({ message: '飯盒已取消' });
+    return;
   } catch (error: any) {
     console.error('刪除飯盒錯誤:', error);
     res.status(500).json({ error: '刪除飯盒失敗' });
+    return;
   }
 });
 
 // 上傳圖片
-router.post('/upload-image', authenticate, upload.single('image'), async (req: AuthRequest, res: Response) => {
+router.post('/upload-image', authenticate, upload.single('image'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: '請提供圖片文件' });
+      res.status(400).json({ error: '請提供圖片文件' });
+      return;
     }
 
     const imageUrl = `/uploads/${req.file.filename}`;
     res.json({ imageUrl });
+    return;
   } catch (error: any) {
     console.error('上傳圖片錯誤:', error);
     res.status(500).json({ error: error.message || '上傳圖片失敗' });
+    return;
   }
 });
 
