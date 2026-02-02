@@ -7,8 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# 安裝依賴
-RUN npm install
+# 安裝依賴（跳過 postinstall 腳本，因為源代碼還沒複製）
+RUN npm install --ignore-scripts
 
 # 複製源代碼
 COPY . .
@@ -27,8 +27,8 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/knexfile.ts ./
 COPY --from=builder /app/migrations ./migrations
 
-# 安裝生產依賴
-RUN npm install --only=production
+# 安裝生產依賴（跳過 postinstall，因為已經構建完成）
+RUN npm install --only=production --ignore-scripts
 
 # 創建上傳目錄
 RUN mkdir -p uploads
