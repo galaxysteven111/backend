@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Force | Select-Object -ExpandProperty FullName | Sort-Object\")",
+      "Bash(findstr:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm install:*)"
+    ]
+  }
+}

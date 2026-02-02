@@ -1,0 +1,98 @@
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-b from-gray-50 to-white text-gray-900;
+  }
+  
+  /* 移動端背景不固定，提升性能 */
+  @media (max-width: 768px) {
+    body {
+      background-attachment: scroll;
+    }
+  }
+  
+  /* 桌面端可以固定 */
+  @media (min-width: 769px) {
+    body {
+      background-attachment: fixed;
+    }
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl hover:from-primary-600 hover:to-primary-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation shadow-warm font-medium;
+    min-height: 44px; /* iOS 觸控目標最小尺寸 */
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-gray-700 px-6 py-3 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 active:scale-[0.98] transition-all touch-manipulation font-medium shadow-soft;
+    min-height: 44px; /* iOS 觸控目標最小尺寸 */
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition-all bg-white;
+    font-size: 16px; /* 防止 iOS 自動縮放 */
+    min-height: 44px; /* iOS 觸控目標最小尺寸 */
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-soft p-4 sm:p-6 border border-gray-100;
+  }
+  
+  /* 移動端優化 */
+  @media (max-width: 640px) {
+    body {
+      -webkit-tap-highlight-color: rgba(249, 115, 22, 0.2);
+    }
+    
+    /* 移除移動端的 backdrop-filter 以提升性能 */
+    * {
+      backdrop-filter: none !important;
+    }
+  }
+  
+  /* 可訪問性：鍵盤導航 */
+  *:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Smooth scrolling for lists */
+  .scroll-smooth-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Optimized scrollable containers */
+  .overflow-scroll-touch {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Global touch & scroll optimizations */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 640px) {
+  /* Prevent layout shift from scrollbar on mobile */
+  html {
+    overflow-y: scroll;
+  }
+
+  /* Passive scroll optimization hint */
+  .grid, .space-y-2, .space-y-3 {
+    will-change: scroll-position;
+    contain: layout style;
+  }
+}

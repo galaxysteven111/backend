@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: foodbox-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: foodbox-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /health
+
+databases:
+  - name: foodbox-db
+    plan: free
+    databaseName: foodbox_db
+    user: foodbox_user

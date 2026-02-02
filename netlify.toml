@@ -1,0 +1,75 @@
+# Netlify 配置文件
+
+[build]
+  # 構建命令
+  command = "cd frontend && npm install && npm run build"
+  # 發布目錄（Vite 默認輸出到 dist）
+  publish = "frontend/dist"
+
+# 環境變量（在 Netlify 控制台設置，這裡只是示例）
+# [build.environment]
+#   VITE_API_URL = "https://your-backend-api.com/api"
+
+# 重定向規則（支持 SPA 路由）
+[[redirects]]
+  # 所有非文件請求都重定向到 index.html（支持 React Router）
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 安全頭設置
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Content Security Policy（根據需要調整）
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://unpkg.com;"
+
+# 靜態資源緩存（圖片、CSS、JS）
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 壓縮設置
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
