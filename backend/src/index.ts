@@ -58,6 +58,18 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), {
   immutable: true,
 }));
 
+// 根路由
+app.get('/', (_req, res) => {
+  res.json({
+    message: '歡迎使用捐飯盒平台API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+    },
+  });
+});
+
 // 健康檢查（含數據庫連接檢測）
 app.get('/health', async (_req, res) => {
   let dbStatus: { connected: boolean; latency?: string } = { connected: false };
@@ -126,10 +138,13 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(statusCode).json(formatErrorResponse(err, isProduction));
 });
 
-httpServer.listen(env.PORT, () => {
-  console.log(`服務器運行在 http://localhost:${env.PORT}`);
-  console.log(`環境: ${env.NODE_ENV}`);
-  console.log(`Socket.io 已啟動`);
+httpServer.listen(env.PORT, '0.0.0.0', () => {
+  console.log('===================================');
+  console.log(`🚀 服務器已啟動`);
+  console.log(`   地址: http://0.0.0.0:${env.PORT}`);
+  console.log(`   環境: ${env.NODE_ENV}`);
+  console.log(`   CORS: ${allowedOrigins.join(', ')}`);
+  console.log('===================================');
 });
 
 export { app, io };

@@ -15,18 +15,18 @@ interface EnvConfig {
   FRONTEND_URL: string;
 }
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    console.error(`\n❌ 缺少必需的環境變量: ${name}`);
-    console.error(`   請在 .env 文件或環境中設置 ${name}\n`);
-    process.exit(1);
-  }
-  return value;
-}
-
 /** Validate all required env vars at startup and return typed config */
 export function validateEnv(): EnvConfig {
+  console.log('===================================');
+  console.log('🔍 環境變量檢查');
+  console.log('===================================');
+  console.log(`  NODE_ENV:     ${process.env.NODE_ENV || '(未設置, 默認 development)'}`);
+  console.log(`  PORT:         ${process.env.PORT || process.env.BACKEND_PORT || '(未設置, 默認 3001)'}`);
+  console.log(`  JWT_SECRET:   ${process.env.JWT_SECRET ? '✅ 已設置' : '❌ 未設置'}`);
+  console.log(`  DATABASE_URL: ${process.env.DATABASE_URL ? '✅ 已設置' : '❌ 未設置'}`);
+  console.log(`  FRONTEND_URL: ${process.env.FRONTEND_URL || '(未設置, 默認 http://localhost:3000)'}`);
+  console.log('===================================');
+
   const errors: string[] = [];
 
   // JWT_SECRET is always required
@@ -42,19 +42,18 @@ export function validateEnv(): EnvConfig {
   }
 
   if (errors.length > 0) {
-    console.error('\n===================================');
-    console.error('❌ 環境變量驗證失敗');
-    console.error('===================================');
-    console.error('\n缺少以下必需的環境變量:\n');
+    console.error('\n❌ 環境變量驗證失敗！缺少:\n');
     errors.forEach((e) => console.error(`  • ${e}`));
     console.error('\n請參考 ENV_VARIABLES.md 了解所有環境變量的說明。\n');
     process.exit(1);
   }
 
+  console.log('✅ 環境變量驗證通過\n');
+
   return {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: parseInt(process.env.PORT || process.env.BACKEND_PORT || '3001', 10),
-    JWT_SECRET: requireEnv('JWT_SECRET'),
+    JWT_SECRET: process.env.JWT_SECRET!,
     DATABASE_URL: process.env.DATABASE_URL,
     DB_HOST: process.env.DB_HOST || 'localhost',
     DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),

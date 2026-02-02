@@ -26,15 +26,17 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/knexfile.ts ./
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/scripts ./scripts
 
 # 安裝生產依賴（跳過 postinstall，因為已經構建完成）
-RUN npm install --only=production --ignore-scripts
+# 也安裝 tsx 以便運行 knexfile.ts 遷移
+RUN npm install --omit=dev --ignore-scripts && npm install tsx
 
 # 創建上傳目錄
 RUN mkdir -p uploads
 
-# 暴露端口
+# 暴露端口（Railway 會自動設置 PORT）
 EXPOSE 3001
 
 # 啟動命令
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
