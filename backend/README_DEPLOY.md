@@ -1,65 +1,40 @@
 # 後端部署說明
 
-## 🚀 快速部署（Railway 推薦）
+## Railway 部署（推薦）
 
-### 1. 訪問 Railway
-https://railway.app
+完整的 Railway 部署指南請參考項目根目錄的 **[RAILWAY_DEPLOY.md](../RAILWAY_DEPLOY.md)**。
 
-### 2. 新建項目
-- 選擇 "Deploy from GitHub repo"
-- 選擇你的倉庫
-- 設置 Root Directory 為 `backend`
+### 快速摘要
 
-### 3. 添加 PostgreSQL
-- 點擊 "New" → "Database" → "PostgreSQL"
-- Railway 會自動設置 `DATABASE_URL`
+1. Railway 新建項目 → Deploy from GitHub → Root Directory 設為 `backend`
+2. 添加 PostgreSQL 插件並連接到後端服務
+3. 設置環境變量：`JWT_SECRET`、`FRONTEND_URL`、`NODE_ENV=production`
+4. 生成公開域名
+5. 運行數據庫遷移：`npm run db:migrate`
+6. 驗證：`curl https://your-app.up.railway.app/health`
 
-### 4. 設置環境變量
-```
-NODE_ENV=production
-JWT_SECRET=你的密鑰（運行下方命令生成）
-FRONTEND_URL=https://your-netlify-site.netlify.app
-```
+### 環境變量
 
-生成 JWT_SECRET：
+詳見 **[ENV_VARIABLES.md](../ENV_VARIABLES.md)**。
+
+### 構建流程
+
+項目使用 Dockerfile 多階段構建：
+1. Builder 階段：安裝依賴 → 編譯 TypeScript
+2. 生產階段：只複製編譯結果和生產依賴 → `node dist/index.js`
+
+### 本地開發
+
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+# 安裝依賴
+npm install
 
-### 5. 運行遷移
-在 Railway 終端運行：
-```bash
+# 啟動開發服務器
+npm run dev
+
+# 構建
+npm run build
+
+# 數據庫遷移
 npm run db:migrate
 ```
-
-### 6. 獲取 API URL
-- Settings → Networking → Generate Domain
-- API URL: `https://your-app.up.railway.app/api`
-
----
-
-## 📝 環境變量
-
-必需：
-- `DATABASE_URL` - PostgreSQL 連接字符串（Railway 自動設置）
-- `JWT_SECRET` - JWT 密鑰（必須設置）
-- `FRONTEND_URL` - 前端 URL（用於 CORS）
-
-可選：
-- `PORT` - 端口（Railway 自動設置）
-- `NODE_ENV` - 環境（建議設置為 `production`）
-
----
-
-## 🔧 構建和啟動
-
-Railway 會自動：
-1. 運行 `npm install`
-2. 運行 `npm run build`（通過 postinstall）
-3. 運行 `npm start`
-
----
-
-## 📚 詳細文檔
-
-查看 `BACKEND_DEPLOYMENT.md` 獲取完整部署指南。

@@ -23,12 +23,31 @@
 | `DB_PASSWORD` | 數據庫密碼 | *(空)* |
 | `DB_NAME` | 數據庫名稱 | `foodbox_db` |
 
-### 數據庫連接
+### Railway PostgreSQL 自動變量（PG*）
 
-生產環境使用 `DATABASE_URL`：
-```
-DATABASE_URL=postgresql://username:password@hostname:5432/foodbox_db
-```
+當你在 Railway 中添加 PostgreSQL 插件並連接到後端服務時，Railway 會自動注入以下變量：
+
+| 變量名 | 說明 | 由 Railway 自動設置 |
+|--------|------|---------------------|
+| `PGUSER` | PostgreSQL 用戶名 | ✅ |
+| `PGPASSWORD` | PostgreSQL 密碼 | ✅ |
+| `PGHOST` | PostgreSQL 主機地址 | ✅ |
+| `PGPORT` | PostgreSQL 端口 | ✅ |
+| `PGDATABASE` | PostgreSQL 數據庫名 | ✅ |
+| `POSTGRES_PASSWORD` | PostgreSQL 密碼（備用） | ✅ |
+| `RAILWAY_PRIVATE_DOMAIN` | Railway 內部域名 | ✅ |
+
+> **重要**：後端的 `env.ts` 會自動偵測這些變量。如果 `DATABASE_URL` 缺失或包含未解析的模板（`${{...}}`），系統會自動從 PG* 變量構建連接字符串。
+
+### 數據庫連接優先級
+
+系統按以下優先級解析數據庫連接：
+
+1. **`DATABASE_URL`**（如果是有效的 `postgresql://` URL 且不含 `${{` 模板）
+2. **PG* 變量自動構建**（`PGUSER` + `PGPASSWORD` + `PGHOST` + `PGDATABASE`）
+3. **DB_* 變量回退**（`DB_USER` + `DB_PASSWORD` + `DB_HOST` + `DB_NAME`）
+
+生產環境推薦使用方式 1 或方式 2（Railway 自動設置）。
 
 本地開發可以用個別變量：
 ```
@@ -60,10 +79,16 @@ cp backend/.env.example backend/.env
 
 ### Railway
 
-在 Railway Dashboard → 項目 → Variables 中設置：
-- `JWT_SECRET`
-- `DATABASE_URL`（Railway PostgreSQL 插件會自動設置）
-- `FRONTEND_URL`
+**手動設置的變量**（在 Railway Dashboard → 後端服務 → Variables）：
+- `JWT_SECRET` — 必需，至少 32 字符的隨機密鑰
+- `FRONTEND_URL` — 前端部署地址（如 `https://your-app.netlify.app`）
+- `NODE_ENV` — 設為 `production`
+
+**自動設置的變量**（連接 PostgreSQL 插件後自動注入）：
+- `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT`, `PGDATABASE`
+- 或者手動設置 `DATABASE_URL`（二選一）
+
+> 詳細的 Railway 部署步驟請參考 `RAILWAY_DEPLOY.md`
 
 ### Render
 

@@ -29,6 +29,10 @@ function resolveDatabaseUrl(): string | undefined {
     return raw;
   }
 
+  if (raw && raw.includes('${{')) {
+    console.log('  ⚠️  DATABASE_URL 包含未解析的 ${{}} 模板');
+  }
+
   // Try Railway's individual Postgres variables
   const user = process.env.PGUSER || process.env.DB_USER;
   const password = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD;
@@ -36,14 +40,21 @@ function resolveDatabaseUrl(): string | undefined {
   const port = process.env.PGPORT || process.env.DB_PORT || '5432';
   const database = process.env.PGDATABASE || process.env.DB_NAME;
 
+  console.log('  🔍 嘗試從個別變量構建 DATABASE_URL:');
+  console.log(`    PGUSER:     ${user || '❌ 未設置'}`);
+  console.log(`    PGPASSWORD: ${password ? '✅ 已設置' : '❌ 未設置'}`);
+  console.log(`    PGHOST:     ${host || '❌ 未設置'}`);
+  console.log(`    PGPORT:     ${port}`);
+  console.log(`    PGDATABASE: ${database || '❌ 未設置'}`);
+
   if (user && password && host && database) {
     const constructed = `postgresql://${user}:${password}@${host}:${port}/${database}`;
-    console.log('  ℹ️  DATABASE_URL 從 PG* 變量構建');
-    // Also set it so knex/database.ts can pick it up
+    console.log('  ✅ DATABASE_URL 從 PG* 變量構建成功');
     process.env.DATABASE_URL = constructed;
     return constructed;
   }
 
+  console.log('  ❌ 無法從個別變量構建 DATABASE_URL（缺少必需變量）');
   return undefined;
 }
 
@@ -55,28 +66,12 @@ export function validateEnv(): EnvConfig {
   console.log(`  NODE_ENV:     ${process.env.NODE_ENV || '(未設置, 默認 development)'}`);
   console.log(`  PORT:         ${process.env.PORT || process.env.BACKEND_PORT || '(未設置, 默認 3001)'}`);
   console.log(`  JWT_SECRET:   ${process.env.JWT_SECRET ? '✅ 已設置' : '❌ 未設置'}`);
+  console.log(`  DATABASE_URL: ${process.env.DATABASE_URL ? '✅ 已設置' : '❌ 未設置'}`);
+  console.log(`  FRONTEND_URL: ${process.env.FRONTEND_URL || '(未設置, 默認 http://localhost:3000)'}`);
 
   // Resolve DATABASE_URL (may construct from individual PG vars)
   const databaseUrl = resolveDatabaseUrl();
 
-  const rawDbUrl = process.env.DATABASE_URL;
-  if (rawDbUrl && rawDbUrl.includes('${{')) {
-    console.log(`  DATABASE_URL: ⚠️  包含未解析的模板變量`);
-    console.log(`    提示: Railway 的 $\{{...}} 引用未解析。請確認 PostgreSQL 插件已正確連接。`);
-    console.log(`    原始值: ${rawDbUrl.substring(0, 60)}...`);
-  } else {
-    console.log(`  DATABASE_URL: ${databaseUrl ? '✅ 已設置' : '❌ 未設置'}`);
-  }
-
-  // Also log Railway PG vars for debugging
-  const hasPgVars = !!(process.env.PGUSER || process.env.PGHOST || process.env.PGDATABASE);
-  if (hasPgVars) {
-    console.log(`  PGUSER:       ${process.env.PGUSER ? '✅ 已設置' : '❌ 未設置'}`);
-    console.log(`  PGHOST:       ${process.env.PGHOST || process.env.RAILWAY_PRIVATE_DOMAIN || '❌ 未設置'}`);
-    console.log(`  PGDATABASE:   ${process.env.PGDATABASE ? '✅ 已設置' : '❌ 未設置'}`);
-  }
-
-  console.log(`  FRONTEND_URL: ${process.env.FRONTEND_URL || '(未設置, 默認 http://localhost:3000)'}`);
   console.log('===================================');
 
   const errors: string[] = [];
@@ -89,13 +84,23 @@ export function validateEnv(): EnvConfig {
   // Database: need a resolved DATABASE_URL or individual connection vars
   const hasDbConnection = !!databaseUrl || !!(process.env.DB_HOST || process.env.DB_USER);
   if (!hasDbConnection && process.env.NODE_ENV === 'production') {
-    errors.push('DATABASE_URL - 數據庫連接字符串（生產環境必需）。可設置 DATABASE_URL 或 PGUSER+PGPASSWORD+PGHOST+PGDATABASE');
+    console.error('\n❌ 數據庫連接配置缺失！\n');
+    console.error('請選擇以下方式之一設置：\n');
+    console.error('方式 1：設置 DATABASE_URL');
+    console.error('  Railway → foodbox-backend → Variables → New Variable');
+    console.error('  Key: DATABASE_URL');
+    console.error('  Value: postgresql://user:password@host:5432/database\n');
+    console.error('方式 2：連接 PostgreSQL 插件（Railway 會自動設置 PG* 變量）');
+    console.error('  1. Railway 項目中添加 PostgreSQL 插件');
+    console.error('  2. 點擊 PostgreSQL → Settings → Connect → 選擇 foodbox-backend');
+    console.error('  3. Railway 會自動設置 PGUSER, PGPASSWORD, PGHOST, PGDATABASE\n');
+    errors.push('DATABASE_URL - 數據庫連接字符串（生產環境必需）');
   }
 
   if (errors.length > 0) {
-    console.error('\n❌ 環境變量驗證失敗！缺少:\n');
+    console.error('❌ 環境變量驗證失敗！缺少:\n');
     errors.forEach((e) => console.error(`  • ${e}`));
-    console.error('\n請參考 ENV_VARIABLES.md 了解所有環境變量的說明。\n');
+    console.error('');
     process.exit(1);
   }
 

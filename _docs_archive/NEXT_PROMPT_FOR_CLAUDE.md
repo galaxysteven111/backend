@@ -166,4 +166,3 @@
 - 項目使用 Node.js + Express + TypeScript + PostgreSQL
 - 後端端口：3001（或環境變量 PORT）
 - 前端使用 Vite + React
-- 已配置 Railway、Render、Netlify 部署文件
