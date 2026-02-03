@@ -20,7 +20,12 @@ echo.
 echo ========================================
 echo 步驟 3: 提交修復
 echo ========================================
-git commit -m "修復 Railway Not Found 錯誤：添加診斷日誌、根路由、改進 Dockerfile"
+set /p commit_msg="請輸入提交訊息（直接按 Enter 使用默認訊息）: "
+if "%commit_msg%"=="" (
+    git commit -m "修復 Railway 部署問題"
+) else (
+    git commit -m "%commit_msg%"
+)
 
 echo.
 echo ========================================
